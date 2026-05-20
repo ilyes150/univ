@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: unidz-postgres
+    environment:
+      POSTGRES_DB: unidz_portal
+      POSTGRES_USER: engine_admin
+      POSTGRES_PASSWORD: VaultSecurePassword2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - unidz-network
+
+  backend-api:
+    build: .
+    container_name: unidz-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/unidz_portal
+      SPRING_DATASOURCE_USERNAME: engine_admin
+      SPRING_DATASOURCE_PASSWORD: VaultSecurePassword2026
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - postgres-db
+    networks:
+      - unidz-network
+
+volumes:
+  pgdata:
+
+networks:
+  unidz-network:
+    driver: bridge
