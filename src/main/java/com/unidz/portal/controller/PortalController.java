@@ -41,7 +41,7 @@ public class PortalController {
         // 1. Locate credentials in the Login table
         Optional<Login> loginRecord = loginRepository.findByUsername(username.trim());
         if (loginRecord.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.尋_UNAUTHORIZED)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Authentication rejected: Invalid Student Code."));
         }
 
