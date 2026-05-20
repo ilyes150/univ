@@ -8,18 +8,18 @@ const subjectRegistry = {
   // Semester 1 Columns
   asd1: "Algorithms & Data Structures 1",
   ios1: "Introduction to Operating Systems 1",
-  sm: "Structure Machine (SM)",
+  sm: "Structure Machine",
   algebra1: "Algebra 1",
-  calculus1: "Calculus / Analysis 1",
+  calculus1: "Calculus 1",
   electronic: "Basic Electronics",
-  te: "Techniques d'Expression (TE)",
+  te: "Techniques d'Expression",
   
   // Semester 2 Columns
   asd2: "Algorithms & Data Structures 2",
   ado: "Architecture des Ordinateurs",
   algebra2: "Algebra 2",
-  calculus2: "Calculus / Analysis 2",
-  lm: "Mathematical Logic (LM)",
+  calculus2: "Calculus 2",
+  lm: "Mathematical Logic",
   pst1: "Probability & Statistics 1",
   oet: "Oral Expression Techniques",
   
@@ -28,7 +28,7 @@ const subjectRegistry = {
   isi: "Introduction to Information Systems",
   oop1: "Object-Oriented Programming 1",
   algebre3: "Algebra 3",
-  calculus3: "Calculus / Analysis 3",
+  calculus3: "Calculus 3",
   pst2: "Probability & Statistics 2",
   entreprenariat: "Entrepreneurship"
 };
@@ -260,7 +260,7 @@ async function renderTranscriptTable(semNum) {
 
 function getGradeClass(v) {
   if (v === null || v === undefined) return "text-muted";
-  return v >= 10 ? "pass" : (v >= 8 ? "warn" : "fail");
+  return v >= 10 ? "pass" : "fail";
 }
 
 function formatValue(v) {
