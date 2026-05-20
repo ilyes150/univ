@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UniDZ · Secure Access Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="Style.css" />
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .login-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 420px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        .login-header h2 {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -1px;
+        }
+        .login-header h2 span {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+        .login-header small {
+            display: block;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+        .input-group {
+            margin-bottom: 22px;
+        }
+        .input-group label {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .input-group input {
+            width: 100%;
+            background: rgba(5, 8, 16, 0.6);
+            border: 1px solid var(--border);
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .input-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+        }
+        .login-submit-btn {
+            width: 100%;
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid var(--accent);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: background 0.25s, box-shadow 0.25s;
+            margin-top: 10px;
+        }
+        .login-submit-btn:hover {
+            background: rgba(0, 240, 255, 0.15);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+        .login-error-msg {
+            background: rgba(255, 74, 107, 0.1);
+            border-left: 3px solid var(--error);
+            color: var(--error);
+            padding: 12px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="login-card">
+        <div class="login-header">
+            <h2>Uni<span>DZ</span></h2>
+            <small>Secure Access Terminal</small>
+        </div>
+        
+        <div id="login-error" class="login-error-msg"></div>
+
+        <form id="login-form" onsubmit="handlePortalAuth(event)">
+            <div class="input-group">
+                <label for="auth-username">Matricule / Username</label>
+                <input type="text" id="auth-username" required autocomplete="username" placeholder="e.g., 242435342409" />
+            </div>
+            <div class="input-group">
+                <label for="auth-password">Security Access Key</label>
+                <input type="password" id="auth-password" required autocomplete="current-password" placeholder="••••••••" />
+            </div>
+            <button type="submit" class="login-submit-btn">Establish Connection</button>
+        </form>
+    </div>
+
+    <script>
+        // Check if session already exists, skip login if valid
+        if (localStorage.getItem("unidz_student")) {
+            window.location.replace("home.html");
+        }
+
+        async function handlePortalAuth(event) {
+            event.preventDefault();
+            const user = document.getElementById("auth-username").value.trim();
+            const pass = document.getElementById("auth-password").value;
+            const errorBox = document.getElementById("login-error");
+            
+            errorBox.style.display = "none";
+
+            try {
+                const response = await fetch("http://localhost:8080/api/portal/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || "Authentication rejected. Invalid credentials signature.");
+                }
+
+                const data = await response.json();
+                
+                // Write atomic local variables
+                localStorage.setItem("unidz_student", JSON.stringify(data.student));
+                localStorage.setItem("unidz_metrics", JSON.stringify(data.metrics));
+                
+                // Navigate forward to Workspace
+                window.location.href = "home.html";
+            } catch (err) {
+                errorBox.textContent = err.message;
+                errorBox.style.display = "block";
+            }
+        }
+
+        // --- ANIMATED ENGINE GRID BACKGROUND ---
+        (function () {
+            const canvas = document.getElementById("bg-canvas");
+            const ctx = canvas.getContext("2d");
+            let W, H, points;
+            function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; generateGrid(); }
+            function generateGrid() {
+                const spacing = 65;
+                points = [];
+                for (let r = 0; r <= Math.ceil(H / spacing); r++) {
+                    for (let c = 0; c <= Math.ceil(W / spacing); c++) {
+                        points.push({ x: c * spacing, y: r * spacing, ox: c * spacing, oy: r * spacing, phase: Math.random() * Math.PI * 2, speed: 0.25 + Math.random() * 0.35, range: 5 + Math.random() * 5 });
+                    }
+                }
+            }
+            let ticker = 0;
+            function updateLoop() {
+                ctx.clearRect(0, 0, W, H); ticker += 0.0035;
+                points.forEach(p => {
+                    p.x = p.ox + Math.sin(ticker * p.speed + p.phase) * p.range;
+                    p.y = p.oy + Math.cos(ticker * p.speed + p.phase * 1.2) * p.range * 0.7;
+                    const originDist = Math.hypot(p.x - W / 2, p.y - H / 2);
+                    const alphaVal = Math.max(0, 0.15 - originDist / (W * 0.95));
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 240, 255, ${alphaVal.toFixed(3)})`; ctx.fill();
+                });
+                requestAnimationFrame(updateLoop);
+            }
+            window.addEventListener("resize", resize); resize(); updateLoop();
+        })();
+    </script>
+</body>
+</html>

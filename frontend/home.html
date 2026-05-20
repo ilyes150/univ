@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UniDZ · Student Portal Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="Style.css" />
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="app">
+        <aside id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <ellipse cx="12" cy="12" rx="9" ry="3" transform="rotate(30 12 12)"/>
+                        <ellipse cx="12" cy="12" rx="9" ry="3" transform="rotate(150 12 12)"/>
+                    </svg>
+                </div>
+                <span>UniDZ Portal</span>
+            </div>
+            <nav class="sidebar-menu">
+                <div class="nav-item active" onclick="navigate('home', this)">
+                    <span class="nav-icon">📊</span> Dashboard Overview
+                </div>
+                <div class="nav-item" onclick="navigate('records', this)">
+                    <span class="nav-icon">📜</span> Academic Logs
+                </div>
+            </nav>
+            <div class="sidebar-footer" onclick="handlePortalLogout()" style="padding: 20px; color: var(--error); cursor: pointer; font-family: var(--font-mono); font-size: 12px; border-top: 1px solid var(--border); margin-top: auto; display: flex; align-items: center; gap: 8px;">
+                <span>🔌</span> Terminate Session
+            </div>
+        </aside>
+
+        <div id="main">
+            <header id="header">
+                <div class="header-breadcrumb">
+                    UniDZ / <span id="breadcrumb-label">Dashboard Overview</span>
+                </div>
+                <div class="header-status">
+                    <div class="status-dot"></div>
+                    Session Securely Linked
+                </div>
+            </header>
+            
+            <div id="content">
+                <div class="page active" id="page-home">
+                    <div class="home-welcome-message" id="welcome-text">Loading session...</div>
+                    <div class="profile-details" id="profile-details"></div>
+                </div>
+                
+                <div class="page" id="page-records">
+                    <div class="section-title">Academic Logs</div>
+                    <div class="section-sub">Validated semester performance matrices directly synced from database</div>
+                    <div class="sem-tabs">
+                        <div class="sem-tab active" onclick="selectSem(1, this)">Semester 01</div>
+                        <div class="sem-tab"        onclick="selectSem(2, this)">Semester 02</div>
+                        <div class="sem-tab"        onclick="selectSem(3, this)">Semester 03</div>
+                        <div class="sem-tab locked" title="Term Data Unreleased">Semester 04</div>
+                    </div>
+                    <div id="sem-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── AUTH PROTECTION CHECK ───────────────────────────────────────
+        let currentStudent = JSON.parse(localStorage.getItem("unidz_student"));
+        let academicMetrics = JSON.parse(localStorage.getItem("unidz_metrics"));
+        let semesterGradesCache = {};
+
+        if (!currentStudent) {
+            window.location.replace("login.html");
+        }
+
+        const subjectRegistry = {
+            asd1: "Algorithms & Data Structures 1", ios1: "Introduction to Operating Systems 1", sm: "Structure Machine (SM)",
+            algebra1: "Algebra 1", calculus1: "Calculus / Analysis 1", electronic: "Basic Electronics", te: "Techniques d'Expression (TE)",
+            asd2: "Algorithms & Data Structures 2", ado: "Architecture des Ordinateurs", algebra2: "Algebra 2",
+            calculus2: "Calculus / Analysis 2", lm: "Mathematical Logic (LM)", pst1: "Probability & Statistics 1", oet: "Oral Expression Techniques",
+            asd3: "Algorithms & Data Structures 3", isi: "Introduction to Information Systems", oop1: "Object-Oriented Programming 1",
+            algebre3: "Algebra 3", calculus3: "Calculus / Analysis 3", pst2: "Probability & Statistics 2", entreprenariat: "Entrepreneurship"
+        };
+
+        const excludedColumns = ["id", "avgUef1", "creditUef1", "avgUef2", "creditUef2", "avgUed", "creditUed", "avgUem", "creditUem", "avgUet", "creditUet", "creditSem", "avgSem", "rank"];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            buildDashboardProfile();
+            renderTranscriptTable(1);
+        });
+
+        function handlePortalLogout() {
+            localStorage.clear();
+            window.location.replace("login.html");
+        }
+
+        function navigate(page, el) {
+            document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+            document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+            document.getElementById("page-" + page).classList.add("active");
+            el.classList.add("active");
+            document.getElementById("breadcrumb-label").textContent = page === 'home' ? "Dashboard Overview" : "Academic Logs";
+        }
+
+        function buildDashboardProfile() {
+            const fullName = `${currentStudent.fname} ${currentStudent.lname}`;
+            document.getElementById("welcome-text").innerHTML = `Welcome, <span>${fullName}</span>`;
+
+            const layoutMap = [
+                ["Student Matricule Identification", currentStudent.studentCode, false],
+                ["General Field", currentStudent.field, false],
+                ["Major Specialization", currentStudent.major, false],
+                ["Curriculum Track", currentStudent.cycle, false],
+                ["Academic Level", `Year ${currentStudent.level}`, false],
+                ["Assigned Division Group", `Group ${String(currentStudent.groupNum || currentStudent.group).padStart(2, '0')}`, false],
+                ["Global System Rank Position", academicMetrics ? `#${academicMetrics.rank}` : "N/A", true]
+            ];
+
+            document.getElementById("profile-details").innerHTML = layoutMap.map(([lbl, val, high]) => `
+                <div class="detail-row">
+                    <div class="detail-label">${lbl}</div>
+                    <div class="detail-value ${high ? 'accent' : ''}">${val}</div>
+                </div>
+            `).join('');
+        }
+
+        async function fetchSemesterData(semNum) {
+            if (semesterGradesCache[semNum]) return semesterGradesCache[semNum];
+            const response = await fetch(`http://localhost:8080/api/portal/semester/${semNum}?studentId=${currentStudent.id}`);
+            if (!response.ok) throw new Error(`Could not synchronize metrics.`);
+            const rawData = await response.json();
+            semesterGradesCache[semNum] = rawData;
+            return rawData;
+        }
+
+        function selectSem(semIndex, tabElement) {
+            if (tabElement.classList.contains("locked")) return;
+            document.querySelectorAll(".sem-tab:not(.locked)").forEach(t => t.classList.remove("active"));
+            tabElement.classList.add("active");
+            renderTranscriptTable(semIndex);
+        }
+
+        async function renderTranscriptTable(semNum) {
+            const container = document.getElementById("sem-content");
+            container.innerHTML = `<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 13px; padding: 10px;">Syncing with structural database engine...</div>`;
+
+            try {
+                const rawData = await fetchSemesterData(semNum);
+                let html = `
+                    <div class="ue-table-container" style="margin-top: 20px;">
+                        <table class="grade-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left; padding: 12px 24px;">Module Description</th>
+                                    <th style="text-align: right; padding: 12px 24px;">Obtained Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                Object.keys(rawData).forEach(key => {
+                    if (!excludedColumns.includes(key) && rawData[key] !== null) {
+                        const readableName = subjectRegistry[key] || key.toUpperCase();
+                        html += `
+                            <tr>
+                                <td style="text-align: left; padding: 16px 24px;"><div>${readableName}</div></td>
+                                <td style="text-align: right; padding: 16px 24px;">
+                                    <span class="grade-num ${rawData[key] >= 10 ? 'pass' : 'fail'}">${Number(rawData[key]).toFixed(2)}</span>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                const isPass = rawData.avgSem >= 10;
+                html += `</tbody></table></div>
+                    <div class="sem-summary">
+                        <div class="summary-card highlight">
+                            <div class="s-label">Semester Average</div>
+                            <div class="s-value">${Number(rawData.avgSem).toFixed(2)} <span style="font-size:14px; color:var(--text-muted)">/20</span></div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="s-label">Sequence Rank</div>
+                            <div class="s-value">#${rawData.rank || "N/A"}</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="s-label">Accrued Credits</div>
+                            <div class="s-value">${rawData.creditSem || 0} / 30</div>
+                        </div>
+                        <div class="summary-card ${isPass ? 'status-pass' : 'status-fail'}">
+                            <div class="s-label">Jury Final Verdict</div>
+                            <div class="s-value" style="font-size: 24px; letter-spacing: 1px;">${isPass ? 'ADMIS' : 'AJOURNÉ'}</div>
+                        </div>
+                    </div>`;
+                container.innerHTML = html;
+            } catch (err) {
+                container.innerHTML = `<div style="color: var(--error); padding: 20px; border-left: 2px solid var(--error); font-family: var(--font-mono);">Database Error: ${err.message}</div>`;
+            }
+        }
+
+        // --- ANIMATED ENGINE GRID BACKGROUND ---
+        (function () {
+            const canvas = document.getElementById("bg-canvas"); const ctx = canvas.getContext("2d"); let W, H, points;
+            function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; generateGrid(); }
+            function generateGrid() {
+                const spacing = 65; points = [];
+                for (let r = 0; r <= Math.ceil(H / spacing); r++) {
+                    for (let c = 0; c <= Math.ceil(W / spacing); c++) {
+                        points.push({ x: c * spacing, y: r * spacing, ox: c * spacing, oy: r * spacing, phase: Math.random() * Math.PI * 2, speed: 0.25 + Math.random() * 0.35, range: 5 + Math.random() * 5 });
+                    }
+                }
+            }
+            let ticker = 0;
+            function updateLoop() {
+                ctx.clearRect(0, 0, W, H); ticker += 0.0035;
+                points.forEach(p => {
+                    p.x = p.ox + Math.sin(ticker * p.speed + p.phase) * p.range; p.y = p.oy + Math.cos(ticker * p.speed + p.phase * 1.2) * p.range * 0.7;
+                    const alphaVal = Math.max(0, 0.15 - Math.hypot(p.x - W / 2, p.y - H / 2) / (W * 0.95));
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2); ctx.fillStyle = `rgba(0, 240, 255, ${alphaVal.toFixed(3)})`; ctx.fill();
+                });
+                requestAnimationFrame(updateLoop);
+            }
+            window.addEventListener("resize", resize); resize(); updateLoop();
+        })();
+    </script>
+</body>
+</html>
