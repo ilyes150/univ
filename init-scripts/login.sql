@@ -1,4 +1,4 @@
-INSERT INTO Login (id, username, password)
+INSERT INTO login (id, username, password)
 SELECT 
     id, 
     student_code AS username,

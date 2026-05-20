@@ -11,7 +11,7 @@ CREATE TABLE student (
     "group" INT
 );
 
-CREATE TABLE Login (
+CREATE TABLE login (
     id          INT PRIMARY KEY,
     username    VARCHAR(20),
     password    VARCHAR(256),
