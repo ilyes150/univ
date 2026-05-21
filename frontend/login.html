@@ -4,161 +4,503 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UniDZ · Secure Access Terminal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="Style.css" />
     <style>
+        /* ── Page shell ─────────────────────────────────────────────── */
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-deep);
+            font-family: var(--font-sans);
+        }
+
         body {
             display: flex;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
+            justify-content: center;
         }
-        .login-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 40px;
-            border-radius: var(--radius-lg);
-            width: 100%;
-            max-width: 420px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Outer wrapper ──────────────────────────────────────────── */
+        .login-shell {
+            position: relative;
             z-index: 10;
-        }
-        .login-header {
-            text-align: center;
-            margin-bottom: 35px;
-        }
-        .login-header h2 {
-            font-family: var(--font-display);
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--text);
-            letter-spacing: -1px;
-        }
-        .login-header h2 span {
-            color: var(--accent);
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-        }
-        .login-header small {
-            display: block;
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-size: 10px;
-            margin-top: 5px;
-        }
-        .input-group {
-            margin-bottom: 22px;
-        }
-        .input-group label {
-            display: block;
-            font-family: var(--font-mono);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-        .input-group input {
-            width: 100%;
-            background: rgba(5, 8, 16, 0.6);
-            border: 1px solid var(--border);
-            padding: 14px;
-            border-radius: var(--radius-sm);
-            color: var(--text);
-            font-family: var(--font-mono);
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.25s, box-shadow 0.25s;
-            box-sizing: border-box;
-        }
-        .input-group input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
-        }
-        .login-submit-btn {
-            width: 100%;
-            background: rgba(0, 240, 255, 0.05);
-            border: 1px solid var(--accent);
-            padding: 15px;
-            border-radius: var(--radius-sm);
-            color: var(--accent);
-            font-family: var(--font-mono);
-            font-weight: 700;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            cursor: pointer;
-            transition: background 0.25s, box-shadow 0.25s, opacity 0.2s;
-            margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            width: 100%;
+            padding: 1.5rem;
         }
+
+        /* ── Card ───────────────────────────────────────────────────── */
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background-color: var(--bg-card-deep);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-3xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-modal);
+        }
+
+        /* Top accent bar */
+        .login-accent-bar {
+            height: 0.375rem;
+            background: linear-gradient(90deg, var(--color-brand-blue-600), var(--color-brand-indigo-500));
+        }
+
+        .login-card-body {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        /* ── Header ─────────────────────────────────────────────────── */
+        .login-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.875rem;
+        }
+
+        /* Logo icon */
+        .login-logo-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: var(--radius-lg);
+            background: linear-gradient(135deg, var(--color-brand-blue-600), var(--color-brand-indigo-500));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            box-shadow: 0 10px 15px -3px rgba(59,130,246,.3);
+        }
+
+        .login-logo-icon svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        .login-title {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+            text-align: center;
+        }
+
+        .login-title span { color: var(--color-brand-blue-400); }
+
+        .login-subtitle {
+            font-family: var(--font-mono);
+            font-size: 0.6875rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-faint);
+            text-align: center;
+        }
+
+        /* Session chip */
+        .login-session-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0.875rem;
+            border-radius: var(--radius-full);
+            background-color: rgba(59,130,246,.08);
+            border: 1px solid rgba(59,130,246,.15);
+            font-family: var(--font-mono);
+            font-size: 0.6875rem;
+            color: var(--color-brand-blue-400);
+        }
+
+        .login-session-chip-dot {
+            width: 0.375rem;
+            height: 0.375rem;
+            border-radius: var(--radius-full);
+            background-color: var(--color-emerald-500);
+            animation: chip-pulse 2s cubic-bezier(.4,0,.6,1) infinite;
+        }
+
+        @keyframes chip-pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: .4; }
+        }
+
+        /* ── Error box ──────────────────────────────────────────────── */
+        .login-error-msg {
+            display: none;
+            padding: 0.75rem 1rem;
+            background-color: rgba(251,113,133,.08);
+            border: 1px solid rgba(251,113,133,.2);
+            border-radius: var(--radius-xl);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--color-rose-400);
+            display: none;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .login-error-msg.visible {
+            display: flex;
+        }
+
+        .login-error-msg svg {
+            flex-shrink: 0;
+            margin-top: 1px;
+            color: var(--color-rose-400);
+        }
+
+        /* ── Form ───────────────────────────────────────────────────── */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.125rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+
+        .input-group label {
+            font-family: var(--font-mono);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-faint);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon svg { width: 1rem; height: 1rem; }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: var(--radius-xl);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color var(--transition-base), box-shadow var(--transition-base);
+            box-sizing: border-box;
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-subtle);
+        }
+
+        .input-group input:focus {
+            border-color: var(--color-brand-blue-500);
+            box-shadow: 0 0 0 4px rgba(59,130,246,.1);
+        }
+
+        /* ── Submit button ──────────────────────────────────────────── */
+        .login-submit-btn {
+            width: 100%;
+            padding: 0.8125rem 1rem;
+            background-color: var(--color-brand-blue-600);
+            border: none;
+            border-radius: var(--radius-xl);
+            color: #fff;
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: background-color var(--transition-base), box-shadow var(--transition-base),
+                        opacity var(--transition-base);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.625rem;
+            margin-top: 0.375rem;
+        }
+
         .login-submit-btn:hover:not(:disabled) {
-            background: rgba(0, 240, 255, 0.15);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+            background-color: var(--color-brand-blue-500);
+            box-shadow: var(--shadow-blue);
         }
+
         .login-submit-btn:disabled {
-            opacity: 0.6;
+            opacity: 0.55;
             cursor: not-allowed;
         }
-        .login-error-msg {
-            background: rgba(255, 74, 107, 0.1);
-            border-left: 3px solid var(--error);
-            color: var(--error);
-            padding: 12px;
-            font-family: var(--font-mono);
-            font-size: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            display: none;
-        }
+
+        /* Spinner */
         .spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(0, 240, 255, 0.3);
-            border-top-color: var(--accent);
+            width: 0.875rem;
+            height: 0.875rem;
+            border: 2px solid rgba(255,255,255,.25);
+            border-top-color: #fff;
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
             display: none;
+            flex-shrink: 0;
         }
+
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Footer note ────────────────────────────────────────────── */
+        .login-footer-note {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 0.625rem;
+            color: var(--text-faint);
+            letter-spacing: 0.05em;
+            padding-top: 0.25rem;
+        }
+
+        .login-footer-note svg {
+            width: 0.75rem;
+            height: 0.75rem;
+            color: var(--color-emerald-500);
+            flex-shrink: 0;
+        }
+
+        /* ── Divider ────────────────────────────────────────────────── */
+        .login-divider {
+            border: none;
+            border-top: 1px solid var(--border-subtle);
+            margin: 0;
+        }
     </style>
 </head>
 <body>
     <canvas id="bg-canvas"></canvas>
 
-    <div class="login-card">
-        <div class="login-header">
-            <h2>Uni<span>DZ</span></h2>
-            <small>Secure Access Terminal</small>
+    <div class="login-shell">
+        <div class="login-card">
+            <div class="login-card-body">
+
+                <!-- Header -->
+                <div class="login-header">
+                    <div class="login-logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="login-title">Uni<span>DZ</span></div>
+                        <div class="login-subtitle">Secure Access Terminal</div>
+                    </div>
+                </div>
+
+                <hr class="login-divider" />
+
+                <!-- Error message -->
+                <div id="login-error" class="login-error-msg">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Form -->
+                <form id="login-form" class="login-form">
+
+                    <div class="input-group">
+                        <label for="auth-username">Matricule / Student Code</label>
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                id="auth-username"
+                                required
+                                autocomplete="username"
+                                placeholder="e.g., 232335488809"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="auth-password">Security Access Key</label>
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                            </div>
+                            <input
+                                type="password"
+                                id="auth-password"
+                                required
+                                autocomplete="current-password"
+                                placeholder="••••••••••••"
+                            />
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="login-submit-btn">
+                        <span class="spinner" id="btn-spinner"></span>
+                        <span id="btn-label">Establish Connection</span>
+                    </button>
+
+                </form>
+
+            </div>
         </div>
-
-        <div id="login-error" class="login-error-msg"></div>
-
-        <form id="login-form">
-            <div class="input-group">
-                <label for="auth-username">Matricule / Username</label>
-                <input type="text" id="auth-username" required autocomplete="username" placeholder="e.g., 242435342409" />
-            </div>
-            <div class="input-group">
-                <label for="auth-password">Security Access Key</label>
-                <input type="password" id="auth-password" required autocomplete="current-password" placeholder="••••••••" />
-            </div>
-            <button type="submit" id="submit-btn" class="login-submit-btn">
-                <span class="spinner" id="btn-spinner"></span>
-                <span id="btn-label">Establish Connection</span>
-            </button>
-        </form>
     </div>
 
-    <script src="JS/login.js"></script>
+    <script>
+        const API_BASE = "";
+
+        if (localStorage.getItem("unidz_student")) {
+            window.location.replace("home.html");
+        }
+
+        const loginForm  = document.getElementById("login-form");
+        const errorBox   = document.getElementById("login-error");
+        const errorText  = document.getElementById("error-text");
+        const submitBtn  = document.getElementById("submit-btn");
+        const btnSpinner = document.getElementById("btn-spinner");
+        const btnLabel   = document.getElementById("btn-label");
+
+        function setLoading(loading) {
+            submitBtn.disabled       = loading;
+            btnSpinner.style.display = loading ? "block" : "none";
+            btnLabel.textContent     = loading ? "Authenticating..." : "Establish Connection";
+        }
+
+        function showError(msg) {
+            errorText.textContent = msg;
+            errorBox.classList.add("visible");
+        }
+
+        function hideError() {
+            errorBox.classList.remove("visible");
+        }
+
+        loginForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            if (submitBtn.disabled) return;
+
+            const user = document.getElementById("auth-username").value.trim();
+            const pass = document.getElementById("auth-password").value;
+
+            if (user.length < 5) {
+                showError("Matricule must be at least 5 characters.");
+                return;
+            }
+
+            hideError();
+            setLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/portal/login`, {
+                    method:  "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body:    JSON.stringify({ username: user, password: pass })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || "Authentication rejected. Invalid credentials.");
+                }
+
+                const data = await response.json();
+                localStorage.setItem("unidz_student", JSON.stringify(data.student));
+                localStorage.setItem("unidz_metrics",  JSON.stringify(data.metrics));
+                window.location.href = "home.html";
+            } catch (err) {
+                showError(err.message);
+                setLoading(false);
+            }
+        });
+
+        /* ── Animated background grid ─────────────────────────────── */
+        (function () {
+            const canvas = document.getElementById("bg-canvas");
+            const ctx    = canvas.getContext("2d");
+            let W, H, points;
+
+            function resize() {
+                W = canvas.width  = window.innerWidth;
+                H = canvas.height = window.innerHeight;
+                init();
+            }
+
+            function init() {
+                const spacing = 72;
+                points = [];
+                for (let r = 0; r <= Math.ceil(H / spacing); r++) {
+                    for (let c = 0; c <= Math.ceil(W / spacing); c++) {
+                        points.push({
+                            ox: c * spacing, oy: r * spacing,
+                            x:  c * spacing, y:  r * spacing,
+                            phase: Math.random() * Math.PI * 2,
+                            speed: 0.2 + Math.random() * 0.3,
+                            range: 4 + Math.random() * 5
+                        });
+                    }
+                }
+            }
+
+            let t = 0;
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+                t += 0.003;
+
+                points.forEach(p => {
+                    p.x = p.ox + Math.sin(t * p.speed + p.phase) * p.range;
+                    p.y = p.oy + Math.cos(t * p.speed + p.phase * 1.3) * p.range * 0.6;
+
+                    /* distance-based fade from centre */
+                    const dist  = Math.hypot(p.x - W / 2, p.y - H / 2);
+                    const alpha = Math.max(0, 0.18 - dist / (W * 0.9));
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+                    /* Blue-indigo tint to match new palette */
+                    ctx.fillStyle = `rgba(96,165,250,${alpha.toFixed(3)})`;
+                    ctx.fill();
+                });
+
+                requestAnimationFrame(draw);
+            }
+
+            window.addEventListener("resize", resize);
+            resize();
+            draw();
+        })();
+    </script>
 </body>
 </html>
