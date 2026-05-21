@@ -14,7 +14,6 @@
 
     <div id="app">
         <aside id="sidebar">
-            <!-- FIX: correct brand HTML structure to match CSS (.brand-icon + .brand-text > h1 + small) -->
             <div class="sidebar-brand">
                 <div class="brand-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -30,7 +29,6 @@
             </div>
 
             <nav class="sidebar-menu">
-                <!-- FIX: IDs added to nav-items so navigate() can find active state reliably -->
                 <div class="nav-item active" id="nav-home" onclick="navigate('home', this)">
                     <span class="nav-icon">📊</span> Dashboard Overview
                     <span class="nav-dot"></span>
@@ -40,7 +38,6 @@
                 </div>
             </nav>
 
-            <!-- FIX: sidebar footer uses proper CSS class instead of inline style dump -->
             <div class="sidebar-footer" onclick="handlePortalLogout()">
                 <span>🔌</span> Terminate Session
             </div>
@@ -67,7 +64,6 @@
                     <div class="section-title">Academic Logs</div>
                     <div class="section-sub">Validated semester performance matrices directly synced from database</div>
                     <div class="sem-tabs">
-                        <!-- FIX: data-sem attribute used for clean tab management -->
                         <div class="sem-tab active" data-sem="1" onclick="selectSem(1, this)">Semester 01</div>
                         <div class="sem-tab"        data-sem="2" onclick="selectSem(2, this)">Semester 02</div>
                         <div class="sem-tab"        data-sem="3" onclick="selectSem(3, this)">Semester 03</div>
@@ -80,12 +76,12 @@
     </div>
 
     <script>
-        // ─── API BASE URL (single source of truth) ────────────────────────
-        const API_BASE = "http://localhost:8080";
+        // ─── FIX: relative API base — routed through Nginx proxy ──────────
+        const API_BASE = "";
 
         // ─── AUTH GUARD ───────────────────────────────────────────────────
-        const currentStudent   = JSON.parse(localStorage.getItem("unidz_student"));
-        const academicMetrics  = JSON.parse(localStorage.getItem("unidz_metrics"));
+        const currentStudent  = JSON.parse(localStorage.getItem("unidz_student"));
+        const academicMetrics = JSON.parse(localStorage.getItem("unidz_metrics"));
 
         if (!currentStudent) {
             window.location.replace("login.html");
@@ -93,30 +89,29 @@
 
         // ─── CONSTANTS ────────────────────────────────────────────────────
         const subjectRegistry = {
-            asd1:          "Algorithms & Data Structures 1",
-            ios1:          "Introduction to Operating Systems 1",
-            sm:            "Structure Machine (SM)",
-            algebra1:      "Algebra 1",
-            calculus1:     "Calculus / Analysis 1",
-            electronic:    "Basic Electronics",
-            te:            "Techniques d'Expression (TE)",
-            asd2:          "Algorithms & Data Structures 2",
-            ado:           "Architecture des Ordinateurs",
-            algebra2:      "Algebra 2",
-            calculus2:     "Calculus / Analysis 2",
-            lm:            "Mathematical Logic (LM)",
-            pst1:          "Probability & Statistics 1",
-            oet:           "Oral Expression Techniques",
-            asd3:          "Algorithms & Data Structures 3",
-            isi:           "Introduction to Information Systems",
-            oop1:          "Object-Oriented Programming 1",
-            algebre3:      "Algebra 3",
-            calculus3:     "Calculus / Analysis 3",
-            pst2:          "Probability & Statistics 2",
+            asd1:           "Algorithms & Data Structures 1",
+            ios1:           "Introduction to Operating Systems 1",
+            sm:             "Machine Structure",
+            algebra1:       "Algebra 1",
+            calculus1:      "Calculus  1",
+            electronic:     "Basic Electronics",
+            te:             "Expression Techniques",
+            asd2:           "Algorithms & Data Structures 2",
+            ado:            "Computer Architecture & Organization",
+            algebra2:       "Algebra 2",
+            calculus2:      "Calculus 2",
+            lm:             "Mathematical Logic",
+            pst1:           "Probability & Statistics 1",
+            oet:            "Oral Expression Techniques",
+            asd3:           "Algorithms & Data Structures 3",
+            isi:            "Introduction to Information Systems",
+            oop1:           "Object-Oriented Programming 1",
+            algebre3:       "Algebra 3",
+            calculus3:      "Calculus 3",
+            pst2:           "Probability & Statistics 2",
             entreprenariat: "Entrepreneurship"
         };
 
-        // Columns that are aggregates/metadata — not individual module grades
         const excludedColumns = new Set([
             "id", "avgUef1", "creditUef1", "avgUef2", "creditUef2",
             "avgUed", "creditUed", "avgUem", "creditUem",
@@ -124,22 +119,20 @@
         ]);
 
         let semesterGradesCache = {};
-        // FIX: track which semester tab is currently active to avoid redundant fetches
         let activeSem = 1;
 
         // ─── INIT ─────────────────────────────────────────────────────────
         document.addEventListener("DOMContentLoaded", () => {
             buildDashboardProfile();
-            // Pre-load semester 1 data when the records tab is first visited
         });
 
-        // ─── LOGOUT ──────────────────────────────────────────────────────
+        // ─── LOGOUT ───────────────────────────────────────────────────────
         function handlePortalLogout() {
             localStorage.clear();
             window.location.replace("login.html");
         }
 
-        // ─── NAVIGATION ──────────────────────────────────────────────────
+        // ─── NAVIGATION ───────────────────────────────────────────────────
         function navigate(page, el) {
             document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
             document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
@@ -150,33 +143,34 @@
             const labels = { home: "Dashboard Overview", records: "Academic Logs" };
             document.getElementById("breadcrumb-label").textContent = labels[page] || page;
 
-            // FIX: load semester data when navigating to records tab (lazy load)
             if (page === "records") {
                 renderTranscriptTable(activeSem);
             }
         }
 
-        // ─── DASHBOARD PROFILE ───────────────────────────────────────────
+        // ─── DASHBOARD PROFILE ────────────────────────────────────────────
         function buildDashboardProfile() {
             const fullName = `${currentStudent.fname} ${currentStudent.lname}`;
             document.getElementById("welcome-text").innerHTML =
                 `Welcome, <span>${fullName}</span>`;
 
-            // FIX: Spring serialises the Java field "groupNum" (getter getGroupNum) as "groupNum"
-            // but the original field in DB is "group". We check both keys defensively.
-            const groupNumber = currentStudent.groupNum ?? currentStudent.group ?? "—";
+            const groupNumber  = currentStudent.groupNum ?? currentStudent.group ?? "—";
             const groupDisplay = groupNumber !== "—"
                 ? `Group ${String(groupNumber).padStart(2, "0")}`
                 : "—";
 
+            function ordinalYear(n) {
+                const suffix = ["th","st","nd","rd"];
+                return `${n}${suffix[n] ?? "th"} Year`;
+            }
+            
             const layoutMap = [
-                ["Student Matricule",     currentStudent.studentCode, false],
-                ["General Field",         currentStudent.field,        false],
-                ["Major Specialization",  currentStudent.major,        false],
-                ["Curriculum Track",      currentStudent.cycle,        false],
-                ["Academic Level",        `Year ${currentStudent.level}`, false],
-                ["Assigned Group",        groupDisplay,                false],
-                ["Global Rank Position",  academicMetrics ? `#${academicMetrics.rank}` : "N/A", true]
+                ["General Field",        currentStudent.field,                       false],
+                ["Major Specialization", currentStudent.major,                       false],
+                ["Curriculum Track",     currentStudent.cycle,                       false],
+                ["Academic Level",       ordinalYear(currentStudent.level),          false],
+                ["Assigned Group",       groupDisplay,                               false],
+                ["Global Rank Position", academicMetrics ? `#${academicMetrics.rank}` : "N/A", true]
             ];
 
             document.getElementById("profile-details").innerHTML = layoutMap.map(
@@ -188,11 +182,11 @@
             ).join("");
         }
 
-        // ─── SEMESTER DATA FETCH ─────────────────────────────────────────
+        // ─── SEMESTER DATA FETCH ──────────────────────────────────────────
         async function fetchSemesterData(semNum) {
             if (semesterGradesCache[semNum]) return semesterGradesCache[semNum];
 
-            const url = `${API_BASE}/api/portal/semester/${semNum}?studentId=${currentStudent.id}`;
+            const url      = `${API_BASE}/api/portal/semester/${semNum}?studentId=${currentStudent.id}`;
             const response = await fetch(url);
 
             if (!response.ok) {
@@ -205,10 +199,9 @@
             return rawData;
         }
 
-        // ─── TAB SELECTION ───────────────────────────────────────────────
+        // ─── TAB SELECTION ────────────────────────────────────────────────
         function selectSem(semIndex, tabElement) {
             if (tabElement.classList.contains("locked")) return;
-            // FIX: avoid redundant fetch if same tab clicked again
             if (activeSem === semIndex && semesterGradesCache[semIndex]) return;
 
             document.querySelectorAll(".sem-tab:not(.locked)").forEach(t => t.classList.remove("active"));
@@ -217,7 +210,7 @@
             renderTranscriptTable(semIndex);
         }
 
-        // ─── TRANSCRIPT RENDERER ─────────────────────────────────────────
+        // ─── TRANSCRIPT RENDERER ──────────────────────────────────────────
         async function renderTranscriptTable(semNum) {
             const container = document.getElementById("sem-content");
             container.innerHTML = `
@@ -228,11 +221,10 @@
             try {
                 const rawData = await fetchSemesterData(semNum);
 
-                // Build grade rows — skip excluded/null columns
                 let rows = "";
                 for (const [key, value] of Object.entries(rawData)) {
                     if (excludedColumns.has(key) || value === null || value === undefined) continue;
-                    const label = subjectRegistry[key] || key.toUpperCase();
+                    const label  = subjectRegistry[key] || key.toUpperCase();
                     const passed = Number(value) >= 10;
                     rows += `
                         <tr>
@@ -250,7 +242,7 @@
                 const avg    = rawData.avgSem;
                 const isPass = Number(avg) >= 10;
 
-                const html = `
+                container.innerHTML = `
                     <div class="ue-table-container" style="margin-top:20px;">
                         <table class="grade-table">
                             <thead>
@@ -286,7 +278,6 @@
                         </div>
                     </div>`;
 
-                container.innerHTML = html;
             } catch (err) {
                 container.innerHTML = `
                     <div style="color:var(--error);padding:20px;border-left:2px solid var(--error);
@@ -296,7 +287,7 @@
             }
         }
 
-        // ─── ANIMATED BACKGROUND GRID ────────────────────────────────────
+        // ─── ANIMATED BACKGROUND GRID ─────────────────────────────────────
         (function () {
             const canvas = document.getElementById("bg-canvas");
             const ctx    = canvas.getContext("2d");

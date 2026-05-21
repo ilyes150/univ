@@ -1,65 +1,108 @@
-# UniDZ Portal — Build Fix
+# UniDZ Portal — Fix Summary
 
-## What broke and why
-
-### BUG 1 — Missing main class (CRITICAL · caused the build failure)
-
-**Symptom:** `mvn clean package` exits with code 1 during the Docker build.  
-**Cause:** There is no `@SpringBootApplication` entry point anywhere in `src/`. Spring Boot's Maven plugin cannot package a JAR without one — it has no class to set as the manifest `Main-Class`.  
-**Fix:** Add the file below to your project.
-
-**Place this file at:**
-```
-src/main/java/com/unidz/portal/PortalApplication.java
-```
-→ Use the provided `PortalApplication.java`
+## What was broken and what was fixed
 
 ---
 
-### BUG 2 — Init scripts never run (database stays empty)
+### FIX 1 — Frontend had no container (opening `login.html` directly = CORS errors)
 
-**Symptom:** Backend starts, but every login returns 401 — the `login`, `student`, and semester tables are empty.  
-**Cause:** `docker-compose.yml` has no volume binding for `init-scripts/`. The Postgres image only runs `.sql` files placed in `/docker-entrypoint-initdb.d/` on first startup. Those files were never mounted.  
-**Fix:** Add the volume mount to `docker-compose.yml`.
+**Symptom:** You had to open `frontend/login.html` as a local file. API calls to
+`http://localhost:8080` triggered CORS errors in some browsers, and nothing worked
+from another machine on the same network.
 
-**Replace your `docker-compose.yml` with the provided one.**  
-Key change in the `postgres-db` service:
+**Fix:** Added an **Nginx container** (`frontend` service in `docker-compose.yml`) that:
+- Serves `frontend/` as static files on **port 80**
+- **Proxies `/api/*`** to the Spring Boot backend internally (no more hardcoded `localhost:8080`)
+
+After the fix, just open **`http://localhost`** in any browser.
+
+---
+
+### FIX 2 — Race condition: backend started before database was ready
+
+**Symptom:** On a fresh `docker compose up --build` the backend container often started
+before PostgreSQL finished initialising, causing a connection-refused crash.
+Docker would restart it, but it was flaky and slow.
+
+**Fix:** Added a `healthcheck` to the `postgres-db` service:
 ```yaml
-volumes:
-  - pgdata:/var/lib/postgresql/data
-  - ./init-scripts:/docker-entrypoint-initdb.d   # ← this line was missing
+healthcheck:
+  test: ["CMD-SHELL", "pg_isready -U engine_admin -d unidz_portal"]
+  interval: 5s
+  retries: 10
+```
+The `backend-api` service now uses `condition: service_healthy` instead of just
+`depends_on`, so it only starts once Postgres is genuinely accepting connections.
+
+---
+
+### FIX 3 — Nginx frontend waited for backend healthcheck, but backend had none
+
+**Symptom:** The `frontend` Nginx service would start before Spring Boot finished its
+slow JVM startup, returning 502 Bad Gateway for a few seconds.
+
+**Fix:** Added a healthcheck to `backend-api` using `/actuator/health` (Spring Boot
+Actuator), and `frontend` now uses `condition: service_healthy` too.
+`spring-boot-starter-actuator` was added to `pom.xml`. `wget` was added to the
+Alpine runtime image so the healthcheck command actually works.
+
+---
+
+### FIX 4 — Hardcoded `http://localhost:8080` in every JS file
+
+**Symptom:** The portal only worked on the machine running Docker. Anyone else on the
+same network got connection errors.
+
+**Fix:** `API_BASE` is now `""` (empty string) in both `login.html` and `home.html`.
+All fetch calls become relative (`/api/portal/login`, etc.) and Nginx proxies them
+to the backend container by name (`backend-api:8080`) — no IP or hostname needed.
+
+---
+
+## Project structure after fixes
+
+```
+unidz-portal/
+├── docker-compose.yml        ← 3 services: postgres, backend, frontend(nginx)
+├── nginx.conf                ← NEW: serves static files + proxies /api/*
+├── Dockerfile                ← added wget for healthcheck
+├── pom.xml                   ← added spring-boot-starter-actuator
+├── src/main/resources/
+│   └── application.properties ← actuator health endpoint exposed
+├── frontend/
+│   ├── login.html            ← API_BASE = "" (relative URLs)
+│   ├── home.html             ← API_BASE = "" (relative URLs)
+│   └── Style.css             ← unchanged
+└── init-scripts/             ← unchanged (01–07 SQL files)
 ```
 
-> ⚠️ **Important:** If you already ran `docker compose up` and the volume `pgdata` exists but is empty/wrong, you must reset it first:
-> ```bash
-> docker compose down -v   # removes the named volume
-> docker compose up --build
-> ```
-
 ---
 
-### BUG 3 — DB name mismatch (cosmetic, but confusing)
-
-**Symptom:** None at runtime (the env var overrides the default), but the inconsistency is misleading.  
-**Cause:** `docker-compose.yml` originally created the database as `university_portal`, while `application.properties` defaults to `unidz_portal`. The `SPRING_DATASOURCE_URL` env var in docker-compose happened to point to `university_portal`, making it work — but any developer running the backend standalone (without Docker) would connect to the wrong database.  
-**Fix:** Both `POSTGRES_DB` in docker-compose and the fallback in `application.properties` now use `unidz_portal`.
-
----
-
-## Quick-start after applying fixes
+## Quick start
 
 ```bash
-# 1. Place PortalApplication.java at the correct path (see Bug 1 above)
-# 2. Replace docker-compose.yml
-# 3. If pgdata volume exists from a previous attempt, wipe it:
+# If you have an old pgdata volume from a previous attempt, wipe it first:
 docker compose down -v
 
-# 4. Build and start everything
+# Build everything and start all three containers:
 docker compose up --build
 ```
 
-The backend will be live at `http://localhost:8080`.  
-Open `frontend/login.html` directly in a browser — no web server needed (CORS is open).
+Startup order is automatic: **Postgres → Backend → Nginx**.
 
-**Login credentials:** use any `student_code` as the username (e.g. `242435342409`).  
-The password is whatever you enter — authentication is SHA-256 based on the student code itself, not a separately-chosen password. The default password for every student is their student code entered into the login field (the hash is derived from the code, so entering the code as the password is correct for the default setup).
+Open **`http://localhost`** in your browser — the login page appears immediately.
+
+### Login credentials
+
+Use any `student_code` from the student table as the username (e.g. `242435342409`).
+
+The password is derived from the student code itself:
+
+```
+password_input = "science" + student_code[4:]
+```
+
+So for code `242435342409`, type `science35342409` as the password.
+
+> The SHA-256 hash of that string is what's stored in the `login` table, and it's
+> what the backend verifies against.

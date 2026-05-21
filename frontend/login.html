@@ -120,7 +120,6 @@
             margin-bottom: 20px;
             display: none;
         }
-        /* Spinner for loading state */
         .spinner {
             width: 14px;
             height: 14px;
@@ -144,7 +143,6 @@
 
         <div id="login-error" class="login-error-msg"></div>
 
-        <!-- FIX: removed onsubmit from form tag; event listener attached in JS -->
         <form id="login-form">
             <div class="input-group">
                 <label for="auth-username">Matricule / Username</label>
@@ -162,45 +160,42 @@
     </div>
 
     <script>
-        // ─── API BASE URL ─────────────────────────────────────────────────
-        // Change this once to update all fetch calls across the app
-        const API_BASE = "http://localhost:8080";
+        // ─── FIX: empty string = relative URL, routed through Nginx proxy ─
+        // No more hardcoded "http://localhost:8080" — works in any environment.
+        const API_BASE = "";
 
-        // Redirect if already logged in
         if (localStorage.getItem("unidz_student")) {
             window.location.replace("home.html");
         }
 
-        const loginForm   = document.getElementById("login-form");
-        const errorBox    = document.getElementById("login-error");
-        const submitBtn   = document.getElementById("submit-btn");
-        const btnSpinner  = document.getElementById("btn-spinner");
-        const btnLabel    = document.getElementById("btn-label");
+        const loginForm  = document.getElementById("login-form");
+        const errorBox   = document.getElementById("login-error");
+        const submitBtn  = document.getElementById("submit-btn");
+        const btnSpinner = document.getElementById("btn-spinner");
+        const btnLabel   = document.getElementById("btn-label");
 
         function setLoading(loading) {
-            submitBtn.disabled  = loading;
+            submitBtn.disabled       = loading;
             btnSpinner.style.display = loading ? "block" : "none";
-            btnLabel.textContent = loading ? "Authenticating..." : "Establish Connection";
+            btnLabel.textContent     = loading ? "Authenticating..." : "Establish Connection";
         }
 
         function showError(msg) {
-            errorBox.textContent    = msg;
-            errorBox.style.display  = "block";
+            errorBox.textContent   = msg;
+            errorBox.style.display = "block";
         }
 
         function hideError() {
             errorBox.style.display = "none";
         }
 
-        loginForm.addEventListener("submit", async function(event) {
+        loginForm.addEventListener("submit", async function (event) {
             event.preventDefault();
-            // FIX: guard against double-submit
             if (submitBtn.disabled) return;
 
             const user = document.getElementById("auth-username").value.trim();
             const pass = document.getElementById("auth-password").value;
 
-            // FIX: basic client-side length guard matching backend substring(4) requirement
             if (user.length < 5) {
                 showError("Matricule must be at least 5 characters.");
                 return;
@@ -211,9 +206,9 @@
 
             try {
                 const response = await fetch(`${API_BASE}/api/portal/login`, {
-                    method: "POST",
+                    method:  "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username: user, password: pass })
+                    body:    JSON.stringify({ username: user, password: pass })
                 });
 
                 if (!response.ok) {
@@ -222,10 +217,8 @@
                 }
 
                 const data = await response.json();
-
                 localStorage.setItem("unidz_student", JSON.stringify(data.student));
                 localStorage.setItem("unidz_metrics",  JSON.stringify(data.metrics));
-
                 window.location.href = "home.html";
             } catch (err) {
                 showError(err.message);
@@ -233,7 +226,7 @@
             }
         });
 
-        // ─── ANIMATED BACKGROUND GRID ────────────────────────────────────
+        // ─── ANIMATED BACKGROUND GRID ─────────────────────────────────────
         (function () {
             const canvas = document.getElementById("bg-canvas");
             const ctx    = canvas.getContext("2d");
