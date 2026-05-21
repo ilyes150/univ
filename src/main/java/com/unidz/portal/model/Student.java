@@ -19,6 +19,6 @@ public class Student {
     private String specialty;
     private String cycle;
     private Integer level;
-    @Column(name = "\"group\"")   // "group" is a reserved SQL word — quotes are required
+    @Column(name = "group_num")
     private Integer groupNum;
 }

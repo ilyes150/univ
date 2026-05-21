@@ -1,4 +1,4 @@
-INSERT INTO student (id, fname, lname, student_code, field, major, specialty, cycle, level, "group") VALUES
+INSERT INTO student (id, fname, lname, student_code, field, major, specialty, cycle, level, group_num) VALUES
     (1, 'ABACI', 'Meriem', '242435342409', 'Mathematics and Computer Science', 'Computer Science', NULL, 'Engineering', 2, 6),
     (2, 'ABBACI', 'Djihane', '232435500605', 'Mathematics and Computer Science', 'Computer Science', NULL, 'Engineering', 2, 6),
     (3, 'ABDELAZIZ', 'Amani', '242435358506', 'Mathematics and Computer Science', 'Computer Science', NULL, 'Engineering', 2, 3),

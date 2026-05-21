@@ -8,7 +8,7 @@ CREATE TABLE student (
     specialty VARCHAR(255) NULL,
     cycle VARCHAR(100),
     level INT,
-    "group" INT
+    group_num INT
 );
 
 CREATE TABLE login (
