@@ -76,10 +76,10 @@
     </div>
 
     <script>
-        // ─── FIX: relative API base — routed through Nginx proxy ──────────
+        //  FIX: relative API base — routed through Nginx proxy 
         const API_BASE = "";
 
-        // ─── AUTH GUARD ───────────────────────────────────────────────────
+        //  AUTH GUARD ─
         const currentStudent  = JSON.parse(localStorage.getItem("unidz_student"));
         const academicMetrics = JSON.parse(localStorage.getItem("unidz_metrics"));
 
@@ -87,7 +87,7 @@
             window.location.replace("login.html");
         }
 
-        // ─── CONSTANTS ────────────────────────────────────────────────────
+        //  CONSTANTS 
         const subjectRegistry = {
             asd1:           "Algorithms & Data Structures 1",
             ios1:           "Introduction to Operating Systems 1",
@@ -121,18 +121,18 @@
         let semesterGradesCache = {};
         let activeSem = 1;
 
-        // ─── INIT ─────────────────────────────────────────────────────────
+        //  INIT ─
         document.addEventListener("DOMContentLoaded", () => {
             buildDashboardProfile();
         });
 
-        // ─── LOGOUT ───────────────────────────────────────────────────────
+        //  LOGOUT ──
         function handlePortalLogout() {
             localStorage.clear();
             window.location.replace("login.html");
         }
 
-        // ─── NAVIGATION ───────────────────────────────────────────────────
+        //  NAVIGATION 
         function navigate(page, el) {
             document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
             document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
@@ -148,7 +148,7 @@
             }
         }
 
-        // ─── DASHBOARD PROFILE ────────────────────────────────────────────
+        //  DASHBOARD PROFILE 
         function buildDashboardProfile() {
             const fullName = `${currentStudent.fname} ${currentStudent.lname}`;
             document.getElementById("welcome-text").innerHTML =
@@ -165,11 +165,12 @@
             }
             
             const layoutMap = [
-                ["General Field",        currentStudent.field,                       false],
-                ["Major Specialization", currentStudent.major,                       false],
-                ["Curriculum Track",     currentStudent.cycle,                       false],
+                ["Field",                currentStudent.field,                       false],
+                ["Major",                currentStudent.major,                       false],
+                ["Specialty",            currentStudent.specialization,              false],
+                ["Track",                currentStudent.cycle,                       false],
                 ["Academic Level",       ordinalYear(currentStudent.level),          false],
-                ["Assigned Group",       groupDisplay,                               false],
+                ["Group",                groupDisplay,                               false],
                 ["Global Rank Position", academicMetrics ? `#${academicMetrics.rank}` : "N/A", true]
             ];
 
@@ -182,7 +183,7 @@
             ).join("");
         }
 
-        // ─── SEMESTER DATA FETCH ──────────────────────────────────────────
+        //  SEMESTER DATA FETCH 
         async function fetchSemesterData(semNum) {
             if (semesterGradesCache[semNum]) return semesterGradesCache[semNum];
 
@@ -199,7 +200,7 @@
             return rawData;
         }
 
-        // ─── TAB SELECTION ────────────────────────────────────────────────
+        //  TAB SELECTION ─
         function selectSem(semIndex, tabElement) {
             if (tabElement.classList.contains("locked")) return;
             if (activeSem === semIndex && semesterGradesCache[semIndex]) return;
@@ -210,7 +211,7 @@
             renderTranscriptTable(semIndex);
         }
 
-        // ─── TRANSCRIPT RENDERER ──────────────────────────────────────────
+        //  TRANSCRIPT RENDERER 
         async function renderTranscriptTable(semNum) {
             const container = document.getElementById("sem-content");
             container.innerHTML = `
@@ -287,7 +288,7 @@
             }
         }
 
-        // ─── ANIMATED BACKGROUND GRID ─────────────────────────────────────
+        //  ANIMATED BACKGROUND GRID 
         (function () {
             const canvas = document.getElementById("bg-canvas");
             const ctx    = canvas.getContext("2d");
