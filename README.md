@@ -94,7 +94,7 @@ Open **`http://localhost`** in your browser — the login page appears immediate
 
 ### Login credentials
 
-Use any `student_code` from the student table as the username (e.g. `242435342409`).
+Use any `student_code` from the student table as the username (e.g. `232335488809`).
 
 The password is derived from the student code itself:
 
@@ -102,7 +102,7 @@ The password is derived from the student code itself:
 password_input = "science" + student_code[4:]
 ```
 
-So for code `242435342409`, type `science35342409` as the password.
+So for code `232335488809`, type `science35488809` as the password.
 
 > The SHA-256 hash of that string is what's stored in the `login` table, and it's
 > what the backend verifies against.
