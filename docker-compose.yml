@@ -5,13 +5,14 @@ services:
     image: postgres:15-alpine
     container_name: unidz-postgres
     environment:
-      POSTGRES_DB: university_portal
+      POSTGRES_DB: unidz_portal
       POSTGRES_USER: engine_admin
       POSTGRES_PASSWORD: VaultSecurePassword2026
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d   # ← FIX: loads SQL init files on first run
     networks:
       - unidz-network
 
@@ -21,7 +22,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/university_portal
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/unidz_portal
       SPRING_DATASOURCE_USERNAME: engine_admin
       SPRING_DATASOURCE_PASSWORD: VaultSecurePassword2026
       SPRING_JPA_HIBERNATE_DDL_AUTO: update

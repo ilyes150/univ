@@ -22,7 +22,7 @@
   --radius-lg: 20px;
   --radius-xl: 26px;
 
-  --sidebar-w: 260px; /* Slightly wider to accommodate clean sidebar typography */
+  --sidebar-w: 260px;
   --header-h:  75px;
 }
 
@@ -31,7 +31,7 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 14px; /* Upgraded root browser size for cleaner scaling */
+  font-size: 14px;
   line-height: 1.5;
   overflow: hidden;
 }
@@ -78,15 +78,23 @@ html, body {
   border: 1px solid var(--border-glow);
   display: grid;
   place-items: center;
+  flex-shrink: 0;
   box-shadow: 0 0 12px var(--accent-glow);
 }
 
 .brand-icon svg { width: 22px; height: 22px; color: var(--accent); }
 
+/* FIX: brand-text wrapper styles (were missing — caused sidebar brand to render incorrectly) */
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .brand-text h1 {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 22px; /* Enhanced brand footprint */
+  font-size: 22px;
   color: var(--text);
   line-height: 1;
 }
@@ -99,10 +107,9 @@ html, body {
   color: var(--text-muted);
   text-transform: uppercase;
   display: block;
-  margin-top: 2px;
 }
 
-nav {
+.sidebar-menu {
   padding: 32px 18px;
   flex: 1;
   display: flex;
@@ -118,12 +125,13 @@ nav {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 12px; /* Better link reading profile */
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--text-muted);
   border: 1px solid transparent;
+  user-select: none;
 }
 
 .nav-item svg { width: 20px; height: 20px; }
@@ -146,6 +154,29 @@ nav {
   background: var(--accent);
   box-shadow: 0 0 8px var(--accent);
   margin-left: auto;
+}
+
+/* FIX: sidebar-footer as a proper CSS class (was inline styles in the old HTML) */
+.sidebar-footer {
+  padding: 20px 24px;
+  color: var(--error);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
+  user-select: none;
+}
+
+.sidebar-footer:hover {
+  background: rgba(255, 74, 107, 0.06);
 }
 
 /* ─── MAIN AREA ────────────────────────────────────────────────────────── */
@@ -207,7 +238,7 @@ nav {
   padding: 44px;
 }
 
-/* ─── PAGES & GLOBAL LAYOUT ───────────────────────────────────────────── */
+/* ─── PAGES ───────────────────────────────────────────────────────────── */
 .page { display: none; animation: fadein 0.35s ease-out; }
 .page.active { display: block; }
 
@@ -219,7 +250,7 @@ nav {
 .section-title {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 36px; /* Scaled up from 32px */
+  font-size: 36px;
   color: var(--text);
   margin-bottom: 6px;
 }
@@ -232,20 +263,18 @@ nav {
   margin-bottom: 40px;
 }
 
-/* ─── HOME LAYOUT (WELCOME HEADER + GRID DETAILED INFOMANIFEST) ────────── */
+/* ─── HOME / DASHBOARD ────────────────────────────────────────────────── */
 .home-welcome-message {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 48px; /* High-visibility welcoming headline */
+  font-size: 48px;
   line-height: 1.15;
   color: var(--text);
   margin-bottom: 32px;
   letter-spacing: -0.5px;
 }
 
-.home-welcome-message span {
-  color: var(--accent);
-}
+.home-welcome-message span { color: var(--accent); }
 
 .profile-details {
   display: grid;
@@ -258,38 +287,39 @@ nav {
 }
 
 .detail-row {
-  display: flex; 
-  justify-content: space-between; 
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 20px 32px; /* Increased row breathing room */
+  padding: 20px 32px;
   border-bottom: 1px solid var(--border);
 }
 .detail-row:last-child { border-bottom: none; }
 
-.detail-label { 
-  font-size: 12px; 
-  letter-spacing: 2px; 
-  text-transform: uppercase; 
+.detail-label {
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   color: var(--text-muted);
   font-weight: 400;
 }
 
-.detail-value { 
-  font-family: var(--font-display); 
-  font-weight: 700; 
-  font-size: 17px; /* Increased parameter readability values */
-  color: var(--text); 
+.detail-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--text);
 }
-.detail-value.accent { 
-  color: var(--accent); 
-  font-size: 18px; /* Extra emphasis on Rank highlights */
+.detail-value.accent {
+  color: var(--accent);
+  font-size: 18px;
 }
 
-/* ─── TRANSCRIPT GRADE TABLES ─────────────────────────────────────────── */
+/* ─── TRANSCRIPT / SEMESTER TABS ──────────────────────────────────────── */
 .sem-tabs {
   display: flex;
   gap: 12px;
   margin-bottom: 36px;
+  flex-wrap: wrap;
 }
 
 .sem-tab {
@@ -304,17 +334,24 @@ nav {
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s;
+  user-select: none;
 }
 
-.sem-tab:hover { border-color: rgba(0,240,255,0.3); color: var(--text); }
+.sem-tab:hover:not(.locked) { border-color: rgba(0,240,255,0.3); color: var(--text); }
+
 .sem-tab.active {
   background: rgba(0,240,255,0.08);
   border-color: rgba(0,240,255,0.35);
   color: var(--accent);
   box-shadow: 0 0 16px rgba(0,240,255,0.1);
 }
-.sem-tab.locked { opacity: 0.35; cursor: not-allowed; }
 
+.sem-tab.locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ─── GRADE TABLE ─────────────────────────────────────────────────────── */
 .ue-table-container {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -336,31 +373,11 @@ nav {
 .ue-table-title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 16px; /* Scaled up for unit category headers */
+  font-size: 16px;
   letter-spacing: 0.5px;
   color: var(--text);
 }
-.ue-table-title span { color: var(--accent); margin-right: 10px;}
-
-.ue-table-meta {
-  display: flex;
-  gap: 16px;
-}
-
-.table-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 6px 14px;
-  border-radius: 100px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  letter-spacing: 0.5px;
-}
-.table-badge.accent {
-  background: rgba(0,240,255,0.06);
-  border-color: rgba(0,240,255,0.2);
-  color: var(--accent);
-}
+.ue-table-title span { color: var(--accent); margin-right: 10px; }
 
 .grade-table {
   width: 100%;
@@ -371,7 +388,7 @@ nav {
 .grade-table th {
   padding: 14px 28px;
   color: var(--text-muted);
-  font-size: 11px; /* Clearer labels for headers */
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 2px;
   border-bottom: 1px solid var(--border);
@@ -382,29 +399,22 @@ nav {
   padding: 18px 28px;
   border-bottom: 1px solid rgba(255,255,255,0.03);
   color: var(--text);
-  font-size: 14px; /* Enhanced baseline entry size */
+  font-size: 14px;
 }
 
 .grade-table tr:last-child td { border-bottom: none; }
-.grade-table tr:hover td { background: rgba(255,255,255,0.01); }
-
-.subject-code { 
-  color: var(--text-muted); 
-  font-size: 11px; 
-  margin-top: 4px; 
-  letter-spacing: 0.5px;
-}
+.grade-table tr:hover td      { background: rgba(255,255,255,0.01); }
 
 .grade-num {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 19px; /* Enhanced score visibility dimensions */
+  font-size: 19px;
 }
 .grade-num.pass { color: var(--success); }
 .grade-num.warn { color: var(--warn); }
 .grade-num.fail { color: var(--error); }
 
-/* Summary Cards spacing */
+/* ─── SUMMARY CARDS ───────────────────────────────────────────────────── */
 .sem-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -437,9 +447,10 @@ nav {
 .summary-card .s-value {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 34px; /* Pronounced metric score results */
+  font-size: 34px;
   line-height: 1.1;
 }
-.summary-card.highlight .s-value { color: var(--accent); }
+
+.summary-card.highlight   .s-value { color: var(--accent);  }
 .summary-card.status-pass .s-value { color: var(--success); }
-.summary-card.status-fail .s-value { color: var(--error); }
+.summary-card.status-fail .s-value { color: var(--error);   }
